@@ -13,15 +13,15 @@
         "Pyrogram bot"
     ],
     "env": {
-        "API_ID": {
+        "YOUR_OPENAI_API_KEY": {
             "description": "Get from my.telegram.org/apps",
             "required": true
         },
-        "API_HASH": {
+        "YOUR_TELEGRAM_BOT_TOKEN": {
             "description": "Get from my.telegram.org/apps",
             "required": true
         },
-        "BOT_TOKEN": {
+        "ELEVENLABS_API_KEY": {
             "description": "Get from Telegram's @BotFather",
             "required": true
         }
