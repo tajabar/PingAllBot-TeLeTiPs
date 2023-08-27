@@ -5,9 +5,9 @@ from moviepy.editor import AudioFileClip
 from elevenlabslib import *
 
 
-openai.api_key = "<YOUR_OPENAI_API_KEY>"
-TELEGRAM_API_TOKEN = "<YOUR_TELEGRAM_BOT_TOKEN>"
-ELEVENLABS_API_KEY = "<YOUR_ELEVENLABS_API_KEY>"
+openai.api_key = "YOUR_OPENAI_API_KEY"
+TELEGRAM_API_TOKEN = "YOUR_TELEGRAM_BOT_TOKEN"
+ELEVENLABS_API_KEY = "YOUR_ELEVENLABS_API_KEY"
 
 user = ElevenLabsUser(ELEVENLABS_API_KEY)
 # This is a list because multiple voices can have the same name
