@@ -3,6 +3,6 @@ services:
   worker:
     build: .
     environment:
-      - API_HASH=${API_HASH}
-      - API_ID=${API_ID}
-      - BOT_TOKEN=${BOT_TOKEN}
+      - YOUR_OPENAI_API_KEY=${YOUR_OPENAI_API_KEY}
+      - YOUR_TELEGRAM_BOT_TOKEN=${YOUR_TELEGRAM_BOT_TOKEN}
+      - ELEVENLABS_API_KEY=${ELEVENLABS_API_KEY}
