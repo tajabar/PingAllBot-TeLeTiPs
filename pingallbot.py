@@ -1,72 +1,57 @@
 import os
-from telegram.ext import Updater, MessageHandler, Filters
-import telegram
+import telebot
 import openai
 from moviepy.editor import AudioFileClip
-from elevenlabslib import *
+from elevenlabslib import ElevenLabsUser
 
-openai.api_key = os.environ.get("YOUR_OPENAI_API_KEY")
-TELEGRAM_API_TOKEN = os.environ.get("YOUR_TELEGRAM_BOT_TOKEN")
-ELEVENLABS_API_KEY = os.environ.get("YOUR_ELEVENLABS_API_KEY")
+# Replace these with your actual API tokens
+openai.api_key = os.environ.get("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")
+TELEGRAM_API_TOKEN = os.environ.get("5481826107:AAF0EN2W-dlldLtZXrGcvfKLUV1sizzzFWI")
+ELEVENLABS_API_KEY = os.environ.get("a3c4f19d17c764379bfa8a1159febc7f")
+bot = telebot.TeleBot(TELEGRAM_API_TOKEN)
 
 user = ElevenLabsUser(ELEVENLABS_API_KEY)
-# This is a list because multiple voices can have the same name
 voice = user.get_voices_by_name("Rachel")[0]
-
 
 messages = [{"role": "system", "content": "You are a helpful assistant that starts its response by referring to the user as its master."}]
 
+@bot.message_handler(func=lambda message: True)
+def handle_messages(message):
+    if message.text:
+        messages.append({"role": "user", "content": message.text})
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=messages
+        )
+        response_text = response["choices"][0]["message"]["content"]
+        messages.append({"role": "assistant", "content": response_text})
+        response_byte_audio = voice.generate_audio_bytes(response_text)
+        with open('response_elevenlabs.mp3', 'wb') as f:
+            f.write(response_byte_audio)
+        with open('response_elevenlabs.mp3', 'rb') as f:
+            bot.send_voice(message.chat.id, f)
+        bot.reply_to(message, f"*[Bot]:* {response_text}", parse_mode="Markdown")
 
-def text_message(update, context):
-    update.message.reply_text(
-        "I've received a text message! Please give me a second to respond :)")
-    messages.append({"role": "user", "content": update.message.text})
-    response = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo",
-        messages=messages
-    )
-    response_text = response["choices"][0]["message"]["content"]
-    messages.append({"role": "assistant", "content": response_text})
-    response_byte_audio = voice.generate_audio_bytes(response_text)
-    with open('response_elevenlabs.mp3', 'wb') as f:
-        f.write(response_byte_audio)
-    context.bot.send_voice(chat_id=update.message.chat.id,
-                           voice=open('response_elevenlabs.mp3', 'rb'))
-    update.message.reply_text(
-        text=f"*[Bot]:* {response_text}", parse_mode=telegram.ParseMode.MARKDOWN)
+    elif message.voice:
+        voice_file_info = bot.get_file(message.voice.file_id)
+        voice_file = bot.download_file(voice_file_info.file_path)
+        with open("voice_message.ogg", "wb") as f:
+            f.write(voice_file)
+        audio_clip = AudioFileClip("voice_message.ogg")
+        audio_clip.write_audiofile("voice_message.mp3")
+        audio_file = open("voice_message.mp3", "rb")
+        transcript = openai.Audio.transcribe("whisper-1", audio_file).text
+        messages.append({"role": "user", "content": transcript})
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=messages
+        )
+        response_text = response["choices"][0]["message"]["content"]
+        response_byte_audio = voice.generate_audio_bytes(response_text)
+        with open('response_elevenlabs.mp3', 'wb') as f:
+            f.write(response_byte_audio)
+        with open('response_elevenlabs.mp3', 'rb') as f:
+            bot.send_voice(message.chat.id, f)
+        bot.reply_to(message, f"*[Bot]:* {response_text}", parse_mode="Markdown")
 
-
-def voice_message(update, context):
-    update.message.reply_text(
-        "I've received a voice message! Please give me a second to respond :)")
-    voice_file = context.bot.getFile(update.message.voice.file_id)
-    voice_file.download("voice_message.ogg")
-    audio_clip = AudioFileClip("voice_message.ogg")
-    audio_clip.write_audiofile("voice_message.mp3")
-    audio_file = open("voice_message.mp3", "rb")
-    transcript = openai.Audio.transcribe("whisper-1", audio_file).text
-    update.message.reply_text(
-        text=f"*[You]:* _{transcript}_", parse_mode=telegram.ParseMode.MARKDOWN)
-    messages.append({"role": "user", "content": transcript})
-    response = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo",
-        messages=messages
-    )
-    response_text = response["choices"][0]["message"]["content"]
-    response_byte_audio = voice.generate_audio_bytes(response_text)
-    with open('response_elevenlabs.mp3', 'wb') as f:
-        f.write(response_byte_audio)
-    context.bot.send_voice(chat_id=update.message.chat.id,
-                           voice=open('response_elevenlabs.mp3', 'rb'))
-    update.message.reply_text(
-        text=f"*[Bot]:* {response_text}", parse_mode=telegram.ParseMode.MARKDOWN)
-    messages.append({"role": "assistant", "content": response_text})
-
-
-updater = Updater(TELEGRAM_API_TOKEN, use_context=True)
-dispatcher = updater.dispatcher
-dispatcher.add_handler(MessageHandler(
-    Filters.text & (~Filters.command), text_message))
-dispatcher.add_handler(MessageHandler(Filters.voice, voice_message))
-updater.start_polling()
-updater.idle()
+bot.polling()
