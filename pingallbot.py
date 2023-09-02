@@ -2,7 +2,7 @@ import os
 import telebot
 import openai
 from moviepy.editor import AudioFileClip
-from elevenlabslib import ElevenLabsUser
+from elevenlabslib import *
 
 # Replace these with your actual API tokens
 openai.api_key = os.environ.get("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")
